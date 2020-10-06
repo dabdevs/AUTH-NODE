@@ -1,5 +1,7 @@
+//Initialize mongoose
 const mongoose = require("mongoose");
 
+//Creating user model schema
 const userSchema = mongoose.Schema({
   email: {
     type: String,
@@ -20,4 +22,5 @@ const userSchema = mongoose.Schema({
   },
 });
 
+//Exporting module
 module.exports = mongoose.model("User", userSchema);

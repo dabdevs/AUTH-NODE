@@ -33,10 +33,44 @@ protectedRoutes.use((req, res, next) => {
 });
 
 //Get all models
-router.get("/", protectedRoutes, (req, res) => {
+router.get("/", (req, res) => {
   User.find()
     .then((users) => res.status(200).json({ users }))
     .catch((error) => res.status(404).json({ error }));
+});
+
+//Api login
+router.post("/login", (req, res) => {
+  User.findOne({ email: req.body.email }).then((user) => {
+    if (user == null) return res.json({ message: "Authentication failed" });
+    bcrypt.compare(req.body.password, user.password).then(function (valid) {
+      if (!valid) return res.send({ message: "Wrong credentials" });
+      playload = { check: true };
+      const token = jwt.sign(playload, process.env.API_KEY, {
+        expiresIn: 1000,
+      });
+      res.json({ token, message: "Login Successful" });
+    });
+  });
+
+  // User.findOne({
+  //   email: req.body.email,
+  // })
+  //   .then((user) => {
+  //     if (!user) return res.json({ message: "Authentication failed" });
+
+  //     bcrypt.compare(req.body.password, user.password, (error, valid) => {
+  //       if (error) return res.json({ error });
+  //       if (valid) {
+  //         playload = { check: true };
+  //         const token = jwt.sign(playload, process.env.API_KEY, {
+  //           expiresIn: 1000,
+  //         });
+  //         res.json({ token, message: "Login Successful" });
+  //       }
+  //     });
+  //   })
+  //   .catch((error) => res.json({ error }));
 });
 
 //Create a user
@@ -49,23 +83,26 @@ router.post("/register", (req, res) => {
   User.findOne({ email: req.body.email })
     .then((data) => {
       if (data !== null)
-        res.status(200).json({ message: "User already exists" });
-      else {
-        req.body.password = bcrypt.hashSync(req.body.password, 10);
+        return res.status(200).json({ message: "User already exists" });
+      //Hashing password
+      bcrypt.hash(req.body.password, 10, function (err, hash) {
+        // Saving hashed password to DB.
+        if (err) return res.json({ err });
         const user = new User({
           ...req.body,
         });
+        user.password = hash;
         user
           .save()
           .then(() => res.json({ message: "User created" }))
           .catch((error) => res.json({ error }));
-      }
+      });
     })
     .catch((error) => res.status(404).json({ error }));
 });
 
 //Get a user
-router.get("/:id", protectedRoutes, (req, res) => {
+router.get("/:id", (req, res) => {
   User.findOne({ _id: req.params.id })
     .then((user) => res.status(200).json(user))
     .catch((error) => res.status(404).json({ error }));
@@ -95,28 +132,6 @@ router.delete("/:id", protectedRoutes, (req, res) => {
         .status(200)
         .json({ message: `User with id ${req.params.id} deleted.` })
     )
-    .catch((error) => res.json({ error }));
-});
-
-//Api login
-router.post("/login", (req, res) => {
-  User.findOne({
-    email: req.body.email,
-  })
-    .then((user) => {
-      if (!user) return res.json({ message: "Authentication failed" });
-
-      bcrypt.compare(req.body.password, user.password, (error, valid) => {
-        if (error) return res.json({ error });
-        if (valid) {
-          playload = { check: true };
-          const token = jwt.sign(playload, process.env.API_KEY, {
-            expiresIn: 1000,
-          });
-          res.json({ token, message: "Login Successful" });
-        }
-      });
-    })
     .catch((error) => res.json({ error }));
 });
 

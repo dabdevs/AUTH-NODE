@@ -2,9 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
+const morgan = require("morgan");
 const userRoutes = require("./routes/auth");
 
 const app = express();
+
+app.use(morgan("dev"));
 app.use(express.static("static"));
 app.use(express.urlencoded({ extended: true }));
 dotenv.config();
@@ -21,11 +24,11 @@ mongoose
 
 app.use(bodyParser.json());
 
-app.use("/api/users", userRoutes)
+app.use("/api/users", userRoutes);
 
-//404 middleware
+//400 middleware
 app.use((req, res) => {
-  res.status(400).send({ message:"Bad request" });
+  res.status(400).send({ message: "Bad request" });
 });
 
 //Exporting the module
